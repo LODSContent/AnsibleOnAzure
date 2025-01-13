@@ -15,10 +15,12 @@
     rhel_vm_size: "Standard_DS1_v2"
     rhel_vm_sku: "8_7"
     rhel_public_ip_name: "rhel_demo_ip"
+    rhel_nic_name: "rhel_demo_nic"
     rhel_admin_user: "rheluser"
     rhel_admin_password: "RedHatAnsible123!"
     survey_public_ip: "True"
   tasks:
+  
     - name: Create resource group
       azure.azcollection.azure_rm_resourcegroup:
         name: "{{ resource_group_name }}"
@@ -74,17 +76,12 @@
             access: Allow
             priority: 1002
             direction: Inbound
-          - name: HTTP
+          - name: http
             protocol: Tcp
             destination_port_range: 80
             access: Allow
             priority: 1003
             direction: Inbound
-
-    # New task to dynamically set the NIC name based on the VM name
-    - name: Set dynamic NIC name
-      ansible.builtin.set_fact:
-        rhel_nic_name: "{{ rhel_vm_name }}_nic"
 
     - name: Create virtual network interface card
       azure.azcollection.azure_rm_networkinterface:
@@ -95,7 +92,7 @@
         security_group: "{{ network_sec_group_name }}"
       when: survey_public_ip != "True"
 
-    - name: Create virtual network interface card with public IP
+    - name: Create virtual network interface card
       azure.azcollection.azure_rm_networkinterface:
         resource_group: "{{ resource_group_name }}"
         name: "{{ rhel_nic_name }}"
