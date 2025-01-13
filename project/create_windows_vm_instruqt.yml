@@ -1,0 +1,98 @@
+---
+- name: Create Azure VM
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Create resource group
+      azure.azcollection.azure_rm_resourcegroup:
+        name: "{{ resource_group_name }}"
+        location: "{{ region }}"
+
+    - name: Create virtual network
+      azure.azcollection.azure_rm_virtualnetwork:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ vnet_name }}"
+        address_prefixes: "{{ vnet_cidr }}"
+
+    - name: Add subnet
+      azure.azcollection.azure_rm_subnet:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ subnet_name }}"
+        address_prefix: "{{ subnet_cidr }}"
+        virtual_network: "{{ vnet_name }}"
+
+    - name: Create public IP address
+      azure.azcollection.azure_rm_publicipaddress:
+        resource_group: "{{ resource_group_name }}"
+        allocation_method: Static
+        name: "{{ win_public_ip_name }}"
+      register: output_ip_address
+
+    - name: Dump public IP for VM which will be created
+      ansible.builtin.debug:
+        msg: "The public IP is {{ output_ip_address.state.ip_address }}"
+
+    - name: Set Stat for Ansible Controller
+      ansible.builtin.set_stats:
+        data: 
+          azure_vm_public_ip: "{{ output_ip_address.state.ip_address }}"
+        per_host: false
+
+    - name: Create Network Security Group that allows SSH and RDP
+      azure.azcollection.azure_rm_securitygroup:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ network_sec_group_name }}"
+        rules:
+          - name: SSH
+            protocol: Tcp
+            destination_port_range: 22
+            access: Allow
+            priority: 1001
+            direction: Inbound
+          - name: RDP
+            protocol: Tcp
+            destination_port_range: 3389
+            access: Allow
+            priority: 1002
+            direction: Inbound
+
+    - name: Create virtual network interface card
+      azure.azcollection.azure_rm_networkinterface:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ win_nic_name }}"
+        virtual_network: "{{ vnet_name }}"
+        subnet: "{{ subnet_name }}"
+        security_group: "{{ network_sec_group_name }}"
+        ip_configurations:
+          - name: ipconfig1
+            public_ip_address_name: "{{ win_public_ip_name }}"
+
+    # - name: Create storage account
+    #   azure.azcollection.azure_rm_storageaccount:
+    #     resource_group: "{{ resource_group_name }}"
+    #     name: "{{ win_vm_name_sa }}"
+    #     type: "Standard_LRS"
+    #     state: present
+
+    - name: Create VM
+      azure.azcollection.azure_rm_virtualmachine:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ win_vm_name }}"
+        os_type: "Windows"
+        vm_size: "{{ win_vm_size }}"
+        managed_disk_type: Standard_LRS
+        admin_username: "{{ win_admin_user }}"
+        admin_password: "{{ win_admin_password }}"
+        network_interfaces: "{{ win_nic_name }}"
+        # storage_account_name: "{{ win_vm_name_sa }}"
+        os_disk_name: "winos"
+        os_disk_size_gb: "150"
+        ssh_password_enabled: "false"
+        tags:
+          "demo": "true"
+          "os": "windows"
+        image:
+          offer: WindowsServer
+          publisher: MicrosoftWindowsServer
+          sku: "{{ win_vm_sku }}"
+          version: latest

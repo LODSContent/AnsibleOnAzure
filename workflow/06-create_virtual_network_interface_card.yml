@@ -1,0 +1,15 @@
+---
+- name: Create the Virtual Network Interface card
+  hosts: localhost
+  connection: local
+  tasks:
+  
+    - name: Create virtual network interface card
+      azure.azcollection.azure_rm_networkinterface:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ win_nic_name }}"
+        virtual_network: "{{ vnet_name }}"
+        subnet: "{{ subnet_name }}"
+        ip_configurations:
+          - name: ipconfig1
+            public_ip_address_name: "{{ win_public_ip_name }}"
