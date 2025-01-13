@@ -1,0 +1,15 @@
+---
+- name: retrieve regions 
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Get list of all regions
+      azure.azcollection.azure_rm_resource_info:
+        url: "/locations"
+        api_version: "2020-01-01"
+      register: all_regions
+
+    - name: print var all_regions
+      ansible.builtin.debug:
+        msg: "{{ all_regions }}"

@@ -1,0 +1,12 @@
+---
+- name: retrieve networks 
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: get all virtual networks
+      azure.azcollection.azure_rm_virtualnetwork_info:
+      register: azure_networks
+
+    - name: print azure_networks var
+      ansible.builtin.debug:
+        msg: "{{ azure_networks }}"

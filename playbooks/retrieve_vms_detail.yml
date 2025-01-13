@@ -1,0 +1,31 @@
+---
+- name: retrieve hosts with your_tags filter
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: retrieve vms from your_location
+      azure.azcollection.azure_rm_virtualmachine_info:
+        tags: "{{ your_tags | default('demo:true') }}"
+      register: retrieved_info
+
+    - name: print retrieved_info
+      ansible.builtin.debug:
+        msg: "There are {{ retrieved_info.vms | length }} virtual machine(s) that match your filter"
+
+    - name: print tags
+      ansible.builtin.debug:
+        msg:
+          - name: "{{ item.name }}"
+          - tags: "{{ item.tags }}"
+          - power_state: "{{ item.power_state }}"
+      loop: "{{ retrieved_info.vms | list }}"
+      loop_control:
+         label: "virtual machine info and associated tags"
+
+    - name: save the instances to be used in a workflow variable for following job templates
+      ansible.builtin.set_stats:
+        data:
+          vm_name_list: "{{ retrieved_info.vms | map(attribute='name') | list }}"
+        per_host: false
+      when: retrieved_info.vms | length > 0

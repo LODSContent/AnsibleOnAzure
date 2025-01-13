@@ -1,0 +1,23 @@
+---
+- name: retrieve hosts with your_tags filter
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: retrieve vms from your_location
+      azure.azcollection.azure_rm_virtualmachine_info:
+      register: retrieved_info
+
+    - name: print retrieved_info
+      ansible.builtin.debug:
+        msg: "{{ retrieved_info }}"
+
+    - name: print tags
+      ansible.builtin.debug:
+        msg:
+          - name: "{{ item.name }}"
+          - tags: "{{ item.tags }}"
+          - power_state: "{{ item.power_state }}"
+      loop: "{{ retrieved_info.vms | list }}"
+      loop_control:
+         label: "virtual machine info and associated tags"
