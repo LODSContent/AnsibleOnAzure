@@ -18,7 +18,7 @@
       ansible.builtin.dnf:
         name: "{{ application }}"
         allow_downgrade: true
-        use_backend: auto
+        use_backend: dnf4
       register: result
       notify: Printing to terminal application information
 
