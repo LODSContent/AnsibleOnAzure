@@ -1,0 +1,16 @@
+---
+- name: Start service
+  hosts: "{{ _hosts | default(omit) }}"
+  become: true
+  vars:
+    service_name: undef
+
+  tasks:
+    - name: Check Service
+      ansible.builtin.service_facts:
+
+    - name: Start Service
+      ansible.builtin.service:
+        name: "{{ service_name }}"
+        state: started
+      when: service_name + '.service' in services
