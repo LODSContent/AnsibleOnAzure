@@ -33,6 +33,6 @@
         state: restarted
 #      when: ansible_os_family == 'RedHat'
 
-    - name: Show Cockpit URL
+    - name: Show Web Console URL
       debug:
-        msg: "Cockpit URL: https://{{ ansible_host }}:9090"
+        msg: "Web Console URL: https://{{ ansible_host }}:9090"
