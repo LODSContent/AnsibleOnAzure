@@ -33,6 +33,6 @@
         state: restarted
 #      when: ansible_os_family == 'RedHat'
 
-    - name: Show Web Console URL
+    - name: Show Web Console IP Address
       debug:
-        msg: "Web Console URL: https://{{ ansible_host }}:9090"
+        msg: "Web Console IP Address: {{ ansible_host }}"
