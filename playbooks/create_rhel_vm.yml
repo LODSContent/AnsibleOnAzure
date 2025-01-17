@@ -115,7 +115,7 @@
             protocol: Tcp
             destination_port_range: 9090
             access: Allow
-            priority: 1003
+            priority: 1004
             direction: Inbound
 
     #######################################################################
