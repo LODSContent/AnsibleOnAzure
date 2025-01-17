@@ -111,6 +111,12 @@
             access: Allow
             priority: 1003
             direction: Inbound
+          - name: rhelconsole
+            protocol: Tcp
+            destination_port_range: 9090
+            access: Allow
+            priority: 1003
+            direction: Inbound
 
     #######################################################################
     # 8. (Conditional) Create the NIC without a Public IP
