@@ -1,0 +1,23 @@
+---
+- name: Register a system with Red Hat using `rhc connect`
+  hosts: "{{ _hosts }}"
+  become: yes
+  vars:
+    redhat_username: "{{ lookup('env', 'REDHAT_USERNAME') }}"  # Fetch username from environment variable
+    redhat_password: "{{ lookup('env', 'REDHAT_PASSWORD') }}"  # Fetch password from environment variable
+  tasks:
+    - name: Ensure rhc is installed
+      yum:
+        name: rhc
+        state: present
+
+    - name: Run rhc connect to register the system
+      command: >
+        rhc connect
+      environment:
+        RHC_USERNAME: "{{ redhat_username }}"
+        RHC_PASSWORD: "{{ redhat_password }}"
+      
+        register output_message
+     
+steps necessary and network
