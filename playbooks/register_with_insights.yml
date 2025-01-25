@@ -17,7 +17,8 @@
       environment:
         RHC_USERNAME: "{{ redhat_username }}"
         RHC_PASSWORD: "{{ redhat_password }}"
-      
-        register output_message
-     
-steps necessary and network
+      register: output_message
+
+    - name: Display the output of rhc connect
+      debug:
+        var: output_message.stdout
