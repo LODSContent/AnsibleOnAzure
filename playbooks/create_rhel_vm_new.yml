@@ -3,9 +3,13 @@
   hosts: localhost
   connection: local
   gather_facts: false
+
   vars:
     resource_group_name: "azure-demo"
+    # This is your default/fallback region if RG doesn't already exist.
     region: "eastus"
+
+    # Networking CIDRs, names, etc.
     vnet_cidr: "10.0.0.0/16"
     subnet_cidr: "10.0.1.0/24"
     vnet_name: "demo_vnet"
@@ -16,7 +20,7 @@
     rhel_vm_name: "RHEL-ansible"
     rhel_vm_size: "Standard_DS1_v2"
     rhel_vm_sku: "8_7"
-    
+
     # Public IP / NIC / Credentials
     rhel_public_ip_name: "rhel_demo_ip"
     rhel_nic_name: "rhel_demo_nic"
@@ -28,37 +32,49 @@
 
   tasks:
 
-    #######################################################################
-    # 1. Check if the resource group already exists
-    #######################################################################
+    ########################################################################
+    # 1. Gather info about the resource group, ignoring errors if not found
+    ########################################################################
     - name: Gather info about Resource Group
       azure.azcollection.azure_rm_resourcegroup_info:
         name: "{{ resource_group_name }}"
       register: rg_info
-      # We don't want the play to fail if the resource group does not exist
       failed_when: false
 
-    #######################################################################
-    # 2. Create the Resource Group only if it does NOT exist
-    #######################################################################
+    ########################################################################
+    # 2. Overwrite the region if the RG exists in another location
+    ########################################################################
+    - name: Debug Resource Group Info
+      ansible.builtin.debug:
+        var: rg_info.resource_groups
+
+    - name: Set region to the existing RG location
+      ansible.builtin.set_fact:
+        region: "{{ rg_info.resource_groups[0].location }}"
+      when: rg_info.resource_groups is defined and rg_info.resource_groups | length > 0
+
+    ########################################################################
+    # 3. Create the Resource Group only if it does NOT exist
+    ########################################################################
     - name: Create resource group (only if needed)
       azure.azcollection.azure_rm_resourcegroup:
         name: "{{ resource_group_name }}"
         location: "{{ region }}"
-      when: rg_info.resource_groups is not defined or rg_info.resource_groups | length == 0
+      when: rg_info.resource_groups | default([]) | length == 0
 
-    #######################################################################
-    # 3. Create a Virtual Network
-    #######################################################################
+    ########################################################################
+    # 4. Create a Virtual Network in the RG’s region
+    ########################################################################
     - name: Create virtual network
       azure.azcollection.azure_rm_virtualnetwork:
         resource_group: "{{ resource_group_name }}"
         name: "{{ vnet_name }}"
         address_prefixes: "{{ vnet_cidr }}"
+        location: "{{ region }}"             # Ensures VNet is in same region
 
-    #######################################################################
-    # 4. Create and attach a Subnet
-    #######################################################################
+    ########################################################################
+    # 5. Create a Subnet in that Virtual Network
+    ########################################################################
     - name: Add subnet
       azure.azcollection.azure_rm_subnet:
         resource_group: "{{ resource_group_name }}"
@@ -66,28 +82,29 @@
         address_prefix: "{{ subnet_cidr }}"
         virtual_network: "{{ vnet_name }}"
 
-    #######################################################################
-    # 5. (Conditional) Create a Public IP address
-    #######################################################################
+    ########################################################################
+    # 6. (Conditional) Create a Public IP address in the same region
+    ########################################################################
     - name: Create public IP address
       azure.azcollection.azure_rm_publicipaddress:
         resource_group: "{{ resource_group_name }}"
         allocation_method: Static
         name: "{{ rhel_vm_name }}-{{ rhel_public_ip_name }}"
+        location: "{{ region }}"            # Put Public IP in same region
       register: output_ip_address
       when: survey_public_ip == "True"
 
-    #######################################################################
-    # 6. (Optional) Dump the Public IP
-    #######################################################################
+    ########################################################################
+    # 7. (Optional) Dump the Public IP
+    ########################################################################
     - name: Dump public IP for VM which will be created
       ansible.builtin.debug:
         msg: "The public IP is {{ output_ip_address.state.ip_address }}"
       when: survey_public_ip == "True"
 
-    #######################################################################
-    # 7. (Optional) Set Stats for Ansible Controller
-    #######################################################################
+    ########################################################################
+    # 8. (Optional) Set Stats for Ansible Controller
+    ########################################################################
     - name: Set Stat for Ansible Controller
       ansible.builtin.set_stats:
         data:
@@ -95,14 +112,14 @@
         per_host: false
       when: survey_public_ip == "True"
 
-    #######################################################################
-    # 8. Create a Network Security Group (NSG) 
-    #    that allows SSH (22), RDP (3389), and HTTP (80)
-    #######################################################################
+    ########################################################################
+    # 9. Create a Network Security Group in the same region
+    ########################################################################
     - name: Create Network Security Group that allows SSH and RDP
       azure.azcollection.azure_rm_securitygroup:
         resource_group: "{{ resource_group_name }}"
         name: "{{ network_sec_group_name }}"
+        location: "{{ region }}"
         rules:
           - name: SSH
             protocol: Tcp
@@ -129,9 +146,9 @@
             priority: 1004
             direction: Inbound
 
-    #######################################################################
-    # 9. (Conditional) Create the NIC without a Public IP
-    #######################################################################
+    ########################################################################
+    # 10. (Conditional) Create the NIC (No Public IP)
+    ########################################################################
     - name: Create virtual network interface card (No Public IP)
       azure.azcollection.azure_rm_networkinterface:
         resource_group: "{{ resource_group_name }}"
@@ -139,11 +156,12 @@
         virtual_network: "{{ vnet_name }}"
         subnet: "{{ subnet_name }}"
         security_group: "{{ network_sec_group_name }}"
+        location: "{{ region }}"
       when: survey_public_ip != "True"
 
-    #######################################################################
-    # 10. (Conditional) Create the NIC with a Public IP
-    #######################################################################
+    ########################################################################
+    # 11. (Conditional) Create the NIC (With Public IP)
+    ########################################################################
     - name: Create virtual network interface card (With Public IP)
       azure.azcollection.azure_rm_networkinterface:
         resource_group: "{{ resource_group_name }}"
@@ -151,14 +169,15 @@
         virtual_network: "{{ vnet_name }}"
         subnet: "{{ subnet_name }}"
         security_group: "{{ network_sec_group_name }}"
+        location: "{{ region }}"
         ip_configurations:
           - name: ipconfig1
             public_ip_address_name: "{{ rhel_vm_name }}-{{ rhel_public_ip_name }}"
       when: survey_public_ip == "True"
 
-    #######################################################################
-    # 11. (Optional) Set up public keys if "rhel_public_key" is defined
-    #######################################################################
+    ########################################################################
+    # 12. (Optional) Set up public keys if "rhel_public_key" is defined
+    ########################################################################
     - name: Setup public keys
       when: rhel_public_key is defined
       ansible.builtin.set_fact:
@@ -166,13 +185,14 @@
           - path: "/home/{{ rhel_admin_user }}/.ssh/authorized_keys"
             key_data: "{{ rhel_public_key }}"
 
-    #######################################################################
-    # 12. Create the Virtual Machine referencing the correct NIC name
-    #######################################################################
+    ########################################################################
+    # 13. Create the Virtual Machine, referencing the correct NIC name
+    ########################################################################
     - name: Create VM
       azure.azcollection.azure_rm_virtualmachine:
         resource_group: "{{ resource_group_name }}"
         name: "{{ rhel_vm_name }}"
+        location: "{{ region }}"
         managed_disk_type: "Standard_LRS"
         vm_size: "{{ rhel_vm_size }}"
         admin_username: "{{ rhel_admin_user }}"
