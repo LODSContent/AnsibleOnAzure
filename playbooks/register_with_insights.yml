@@ -1,19 +1,29 @@
 ---
-- name: Register a system with Red Hat using `sudo rhc connect`
-  hosts: "{{ _hosts }}"
-  become: yes
-  vars:
-    redhat_username: "{{ lookup('env', 'REDHAT_USERNAME') }}"  # Fetch username from environment variable
-    redhat_password: "{{ lookup('env', 'REDHAT_PASSWORD') }}"  # Fetch password from environment variable
-  tasks:
-    - name: Run sudo rhc connect to register the system
-      command: >
-        sudo rhc connect
-      environment:
-        RHC_USERNAME: "{{ redhat_username }}"
-        RHC_PASSWORD: "{{ redhat_password }}"
-      register: output_message
+name: Register Azure VMs with Red Hat Insights
+hosts: "{{ _hosts }}"  # Variable for target hosts
+vars:
+  _hosts: "all"  # Default host group, can be overridden during playbook execution
+  redhat_account_username: "your_username"  # Replace with Red Hat account username
+  redhat_account_password: "your_password"  # Replace with Red Hat account password
 
-    - name: Display the output of sudo rhc connect
-      debug:
-        var: output_message.stdout
+tasks:
+  - name: Ensure insights is installed
+    ansible.builtin.package:
+      name: insights-client
+      state: present
+
+  - name: Register with insights using credentials
+    ansible.builtin.command: >
+      insights-client --register
+      --username {{ redhat_account_username }}
+      --password {{ redhat_account_password }}
+    no_log: true  # Hides sensitive output (username and password) from logs
+
+  - name: Verify Red Hat Insights registration
+    ansible.builtin.command: insights-client --status
+    register: insights_status
+    changed_when: false
+
+  - name: Display Insights status
+    ansible.builtin.debug:
+      msg: "Insights registration status: {{ insights_status.stdout }}"
