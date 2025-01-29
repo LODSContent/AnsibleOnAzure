@@ -1,8 +1,8 @@
 ---
 - name: Register Azure VMs with Red Hat Insights
   hosts: "{{ _hosts }}"  # Variable for target hosts
-  vars:
 
+  tasks:
      - name: Register with insights using credentials
       ansible.builtin.command: >
         sudo rhc connect -u "{{ redhat_account_username }}" -p "{{ redhat_account_password }}"
