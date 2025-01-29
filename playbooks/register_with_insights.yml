@@ -2,25 +2,14 @@
 - name: Register Azure VMs with Red Hat Insights
   hosts: "{{ _hosts }}"  # Variable for target hosts
   vars:
-    _hosts: "all"  # Default host group, can be overridden during playbook execution
-    redhat_account_username: "your_username"  # Replace with Red Hat account username
-    redhat_account_password: "your_password"  # Replace with Red Hat account password
 
-  tasks:
-    - name: Ensure insights is installed
-      ansible.builtin.package:
-        name: insights-client
-        state: present
-
-    - name: Register with insights using credentials
+     - name: Register with insights using credentials
       ansible.builtin.command: >
-        insights-client --register
-        --username {{ redhat_account_username }}
-        --password {{ redhat_account_password }}
+        sudo rhc connect -u "{{ redhat_account_username }}" -p "{{ redhat_account_password }}"
       no_log: true  # Hides sensitive output (username and password) from logs
 
     - name: Verify Red Hat Insights registration
-      ansible.builtin.command: insights-client --status
+      ansible.builtin.command: sudo insights-client --status
       register: insights_status
       changed_when: false
 
