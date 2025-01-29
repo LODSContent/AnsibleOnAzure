@@ -3,7 +3,7 @@
   hosts: "{{ _hosts }}"  # Variable for target hosts
 
   tasks:
-     - name: Register with insights using credentials
+    - name: Register with insights using credentials
       ansible.builtin.command: >
         sudo rhc connect -u "{{ redhat_account_username }}" -p "{{ redhat_account_password }}"
       no_log: true  # Hides sensitive output (username and password) from logs
