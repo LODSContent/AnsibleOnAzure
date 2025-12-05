@@ -25,7 +25,8 @@
     rhel_admin_password: "RedHatAnsible123!"
     
     # Set "True" if you want to create and associate a public IP with this VM
-    survey_public_ip: "True"
+    #survey_public_ip: "True" #temporarily set to false for testing
+    survey_public_ip: "False"
 
   tasks:
 
