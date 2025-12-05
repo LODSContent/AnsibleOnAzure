@@ -25,8 +25,7 @@
     rhel_admin_password: "RedHatAnsible123!"
     
     # Set "True" if you want to create and associate a public IP with this VM
-    #survey_public_ip: "True" #temporarily set to false for testing
-    survey_public_ip: "False"
+    survey_public_ip: "True"
 
   tasks:
 
@@ -60,13 +59,13 @@
     #######################################################################
     # 4. (Conditional) Create a Public IP address
     #######################################################################
-    #- name: Create public IP address
-    #  azure.azcollection.azure_rm_publicipaddress:
-    #    resource_group: "{{ resource_group_name }}"
-    #    allocation_method: Static
-    #    name: "{{ rhel_vm_name }}-{{ rhel_public_ip_name }}"
-    #  register: output_ip_address
-    #  when: survey_public_ip == "True"
+    - name: Create public IP address
+      azure.azcollection.azure_rm_publicipaddress:
+        resource_group: "{{ resource_group_name }}"
+        allocation_method: Static
+        name: "{{ rhel_vm_name }}-{{ rhel_public_ip_name }}"
+      register: output_ip_address
+      when: survey_public_ip == "True"
 
     #######################################################################
     # 5. (Optional) Dump the Public IP
