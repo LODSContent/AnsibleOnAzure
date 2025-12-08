@@ -65,6 +65,7 @@
         resource_group: "{{ resource_group_name }}"
         allocation_method: Static
         name: "{{ rhel_vm_name }}-{{ rhel_public_ip_name }}"
+        sku: Standard
       register: output_ip_address
       when: survey_public_ip == "True"
 
