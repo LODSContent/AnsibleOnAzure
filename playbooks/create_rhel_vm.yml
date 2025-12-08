@@ -15,9 +15,6 @@
     # VM-specific vars
     rhel_vm_name: "RHEL-ansible"
     rhel_vm_size: "Standard_D2s_v3"
-    #rhel_vm_sku: "8_7"
-    #rhel_vm_sku: "10_1"
-    #rhel_vm_sku: "10-lvm-gen2"
     rhel_vm_sku: "101-gen2"
     
     # Public IP / NIC / Credentials
