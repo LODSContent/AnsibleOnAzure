@@ -15,7 +15,7 @@
     # VM-specific vars
     rhel_vm_name: "RHEL-ansible"
     rhel_vm_size: "Standard_D2s_v3"
-    rhel_vm_sku: "8_7"
+    rhel_vm_sku: "101-gen2"
     
     # Public IP / NIC / Credentials
     rhel_public_ip_name: "rhel_demo_ip"
@@ -61,8 +61,9 @@
     - name: Create public IP address
       azure.azcollection.azure_rm_publicipaddress:
         resource_group: "{{ resource_group_name }}"
-        allocation_method: Static
         name: "{{ rhel_vm_name }}-{{ rhel_public_ip_name }}"
+        allocation_method: Static
+        sku: Standard
       register: output_ip_address
       when: survey_public_ip == "True"
 

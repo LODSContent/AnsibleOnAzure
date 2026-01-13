@@ -1,0 +1,18 @@
+---
+- name: Register Azure VMs with Red Hat Lightspeed
+  hosts: "{{ _hosts }}"  # Variable for target hosts
+
+  tasks:
+    - name: Register with Lightspeed using credentials
+      ansible.builtin.command: >
+        sudo rhc connect -u "{{ redhat_account_username }}" -p "{{ redhat_account_password }}"
+      no_log: true  # Hides sensitive output (username and password) from logs
+
+    - name: Verify Red Hat Lightspeed registration
+      ansible.builtin.command: sudo insights-client --status
+      register: insights_status
+      changed_when: false
+
+    - name: Display Lightspeed status
+      ansible.builtin.debug:
+        msg: "Lightspeed registration status: {{ insights_status.stdout }}"
